@@ -64,7 +64,7 @@ export function UploadForm({ onProcessingStart, onProcessingComplete }: UploadFo
       formData.append('clothingPhoto', clothingPhoto)
 
       // Call API
-      const response = await fetch('/api/process', {
+      const response = await fetch('/api/ai', {
         method: 'POST',
         body: formData,
       })
