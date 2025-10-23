@@ -90,3 +90,4 @@ export function ResultCard({ imageUrl, label, index }: ResultCardProps) {
     </Card>
   )
 }
+
