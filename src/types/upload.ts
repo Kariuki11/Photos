@@ -16,3 +16,4 @@ export interface UploadState {
 
 export type UploadType = 'model' | 'clothing';
 
+
