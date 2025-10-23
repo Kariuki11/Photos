@@ -39,7 +39,7 @@ export function ResultGrid({ images }: ResultGridProps) {
       y: 0,
       transition: {
         duration: 0.6,
-        ease: easeOut, // ✅ imported easing function
+        ease: easeOut, //imported easing function
       },
     },
   }
