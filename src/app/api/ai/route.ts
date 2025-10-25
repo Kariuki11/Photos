@@ -13,13 +13,17 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const modelPhoto = formData.get("modelPhoto") as File | null;
     const clothingPhoto = formData.get("clothingPhoto") as File | null;
+    const step = formData.get("step") as string | null;
 
-    if (!modelPhoto || !clothingPhoto) {
+
+    if (!modelPhoto || !clothingPhoto || !step) {
       return NextResponse.json(
         { error: "Both model and clothing photos are required." },
         { status: 400 }
       );
     }
+
+    const currentStep = Number(step)
 
     // Convert both images to base64
     const modelArrayBuffer = await modelPhoto.arrayBuffer();
@@ -28,7 +32,33 @@ export async function POST(request: NextRequest) {
     const clothingBase64 = Buffer.from(clothingArrayBuffer).toString("base64");
 
     // Build descriptive prompt
-    const basePrompt = `
+    const basePrompt1 = `
+      ${SYSTEM_PROMPT}
+
+      The following base64 image is provided:
+      - Clothing photo (item): ${clothingBase64.slice(0, 80)}...
+
+      Generate four professional, realistic fashion images as per instructions.
+    `;
+    const basePrompt2 = `
+      ${SYSTEM_PROMPT}
+
+      The following two base64 images are provided:
+      - Model photo (person): ${modelBase64.slice(0, 80)}...
+      - Clothing photo (item): ${clothingBase64.slice(0, 80)}...
+
+      Generate four professional, realistic fashion images as per instructions.
+    `;
+    const basePrompt3 = `
+      ${SYSTEM_PROMPT}
+
+      The following two base64 images are provided:
+      - Model photo (person): ${modelBase64.slice(0, 80)}...
+      - Clothing photo (item): ${clothingBase64.slice(0, 80)}...
+
+      Generate four professional, realistic fashion images as per instructions.
+    `;
+    const basePrompt4 = `
       ${SYSTEM_PROMPT}
 
       The following two base64 images are provided:
@@ -38,15 +68,33 @@ export async function POST(request: NextRequest) {
       Generate four professional, realistic fashion images as per instructions.
     `;
 
-    const aiResult = await generateNewImage(basePrompt, {
+    const getbasePrompt = (step: number) => {
+      if(step == 1){
+        return(basePrompt1)
+      }
+      else if(step == 2){
+        return(basePrompt2)
+      }
+      else if(step == 3){
+        return(basePrompt3)
+      }
+      else if(step == 4){
+        return(basePrompt4)
+      }
+      else {
+        return(basePrompt1)
+      }
+    }
+
+    const aiResult = await generateNewImage(getbasePrompt(currentStep), currentStep,{
       model: "gemini-2.5-flash",
       //model: "imagen-3.0-generate-002",
-      aspectRatio: "1:1",
+      //aspectRatio: "1:1",
     });
 
     const result = {
       success: true,
-      images: aiResult.images,
+      images: aiResult.image,
       metadata: aiResult.metadata,
     };
 

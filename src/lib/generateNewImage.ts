@@ -7,12 +7,7 @@ import { googleAI } from "@genkit-ai/google-genai";
  */
 export type GeneratedImageResult = {
   prompt: string;
-  images: {
-    enhanced_product?: string | null;
-    model_front?: string | null;
-    product_back?: string | null;
-    model_back?: string | null;
-  };
+  image: string | null;
   metadata?: {
     model?: string;
     createdAt?: string;
@@ -31,6 +26,7 @@ export type GeneratedImageResult = {
  */
 export async function generateNewImage(
   basePrompt: string,
+  step: number,
   options?: {
     model?: string;
     size?: string;
@@ -66,7 +62,7 @@ export async function generateNewImage(
       ],
       output: {
         format: "image", // Tell Gemini to return image output
-        size, // e.g., "1024x1024"
+        // size, // e.g., "1024x1024"
       },
     });
 
@@ -77,6 +73,22 @@ export async function generateNewImage(
     generate(prompts.product_back),
     generate(prompts.model_back),
   ]);
+  const getPrompt = (step: number) => {
+    if(step == 1){
+      return(prompts.enhanced_product)
+    }
+    else if(step == 2){
+      return(prompts.model_front)
+    }
+    else if(step == 3){
+      return(prompts.product_back)
+    }
+    else if(step == 4){
+      return(prompts.model_back)
+    }
+    else{return(prompts.enhanced_product)}
+  }
+  const prompt = getPrompt(step)
 
   // ✅ Helper to extract the image URL
   const extractUrl = (res: any) =>
@@ -84,18 +96,23 @@ export async function generateNewImage(
       ? res.media()?.url ?? null
       : res?.media?.url ?? null;
 
+  const result = await generate(prompt)
+  const image = extractUrl(result)
+
+
+      
   // ✅ Structure the output images
-  const images = {
-    enhanced_product: extractUrl(enhanced),
-    model_front: extractUrl(front),
-    product_back: extractUrl(backItem),
-    model_back: extractUrl(backModel),
-  };
+  // const images = {
+  //   enhanced_product: extractUrl(enhanced),
+  //   model_front: extractUrl(front),
+  //   product_back: extractUrl(backItem),
+  //   model_back: extractUrl(backModel),
+  // };
 
   // ✅ Return the standardized response
   return {
     prompt: basePrompt,
-    images,
+    image,
     metadata: {
       model: modelName,
       createdAt: new Date().toISOString(),
