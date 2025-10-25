@@ -92,9 +92,11 @@ export async function POST(request: NextRequest) {
       //aspectRatio: "1:1",
     });
 
+    console.log ('generated image:', aiResult.image)
+
     const result = {
       success: true,
-      images: aiResult.image,
+      image: aiResult.image,
       metadata: aiResult.metadata,
     };
 

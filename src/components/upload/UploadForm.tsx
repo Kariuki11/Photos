@@ -76,7 +76,7 @@ export function UploadForm({ onProcessingStart, onProcessingComplete }: UploadFo
         }
   
         const results = await response.json()
-        onProcessingComplete(results.data, index++)
+        onProcessingComplete(results.data.image, index++)
       }
 
       

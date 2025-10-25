@@ -67,12 +67,12 @@ export async function generateNewImage(
     });
 
   // ✅ Run all image generations concurrently
-  const [enhanced, front, backItem, backModel] = await Promise.all([
-    generate(prompts.enhanced_product),
-    generate(prompts.model_front),
-    generate(prompts.product_back),
-    generate(prompts.model_back),
-  ]);
+  // const [enhanced, front, backItem, backModel] = await Promise.all([
+  //   generate(prompts.enhanced_product),
+  //   generate(prompts.model_front),
+  //   generate(prompts.product_back),
+  //   generate(prompts.model_back),
+  // ]);
   const getPrompt = (step: number) => {
     if(step == 1){
       return(prompts.enhanced_product)
@@ -116,7 +116,7 @@ export async function generateNewImage(
     metadata: {
       model: modelName,
       createdAt: new Date().toISOString(),
-      raw: { enhanced, front, backItem, backModel },
+      raw: image,
     },
   };
 }
