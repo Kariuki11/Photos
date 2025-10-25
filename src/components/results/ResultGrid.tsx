@@ -4,12 +4,12 @@ import { motion, easeOut, Variants } from 'framer-motion'
 import { ResultCard } from './ResultCard'
 import { Download } from 'lucide-react'
 
-interface ResultGridProps {
-  images: {
-    enhanced_product: string
-    model_front: string
-    product_back: string
-    model_back: string
+export interface ResultGridProps {
+  images?: {
+    enhanced_product?: string
+    model_front?: string
+    product_back?: string
+    model_back?: string
   }
 }
 
@@ -23,9 +23,6 @@ const imageLabels = {
 
 
 export function ResultGrid({ images }: ResultGridProps) {
-  function AddImage(image, step){
-    if step
-  }
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -56,7 +53,8 @@ export function ResultGrid({ images }: ResultGridProps) {
       animate="visible"
       className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto"
     >
-      {Object.entries(images).map(([key, url], index) => (
+      {images && Object.entries(images).length > 0 &&
+      Object.entries(images).map(([key, url], index) => (
         <motion.div key={key} variants={itemVariants}>
           <ResultCard
             imageUrl={url}

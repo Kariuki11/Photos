@@ -5,20 +5,43 @@ import { LoadingSpinner } from '@/components/results/LoadingSpinner'
 import { ResultGrid } from '@/components/results/ResultGrid'
 import { useState } from 'react'
 
+export interface ImageResults {
+  enhanced_product?: string
+  model_front?: string
+  product_back?: string
+  model_back?: string
+}
+
 export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false)
-  const [results, setResults] = useState(null)
+  const [results, setResults] = useState <ImageResults | null >(null)
+
+ 
 
   const handleProcessingStart = () => {
     setIsProcessing(true)
     setResults(null)
   }
 
-  const handleProcessingComplete = (generatedImages: any) => {
+  function AddImage(image: string, step: number){
+    let result = {...results}
+    if (step == 1) {
+      result = {...result, enhanced_product: image}
+    }
+    else if (step == 2) {
+      result = {...result, model_front: image}
+    }
+    else if (step == 3) {
+      result = {...result, product_back: image}
+    }
+    else if (step == 4) {
+      result = {...result, model_back: image}
+    }
     setIsProcessing(false)
-    setResults(generatedImages)
+    setResults(result)
   }
 
+  
   const handleReset = () => {
     setResults(null)
     setIsProcessing(false)
@@ -42,7 +65,7 @@ export default function Home() {
           <div className="space-y-8">
             <UploadForm 
               onProcessingStart={handleProcessingStart}
-              onProcessingComplete={handleProcessingComplete}
+              onProcessingComplete={AddImage}
             />
           </div>
         ) : (

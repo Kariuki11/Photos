@@ -10,13 +10,13 @@ import { createImagePreview } from '@/utils/image'
 
 interface UploadFormProps {
   onProcessingStart: () => void
-  onProcessingComplete: (results: any) => void
+  onProcessingComplete: (image: string, step: number) => void
 }
 
 export function UploadForm({ onProcessingStart, onProcessingComplete }: UploadFormProps) {
   const [modelPhoto, setModelPhoto] = useState<File | null>(null)
   const [clothingPhoto, setClothingPhoto] = useState<File | null>(null)
-  const [step, setStep] = useState<number>(0)
+  // const [step, setStep] = useState<number>(0)
   const [modelPreview, setModelPreview] = useState<string | null>(null)
   const [clothingPreview, setClothingPreview] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -45,6 +45,7 @@ export function UploadForm({ onProcessingStart, onProcessingComplete }: UploadFo
       }
     } catch (err) {
       setError('Failed to process image')
+      console.log (err)
     }
   }, [])
 
@@ -75,26 +76,27 @@ export function UploadForm({ onProcessingStart, onProcessingComplete }: UploadFo
         }
   
         const results = await response.json()
-        onProcessingComplete({...results})
+        onProcessingComplete(results.data, index++)
       }
 
       
-      }
+      // }
       // Call API
-      const response = await fetch('/api/ai', {
-        method: 'POST',
-        body: formData,
-      })
+      // const response = await fetch('/api/ai', {
+      //   method: 'POST',
+      //   body: formData,
+      // })
 
-      if (!response.ok) {
-        throw new Error('Failed to process images')
-      }
+      // if (!response.ok) {
+      //   throw new Error('Failed to process images')
+      // }
 
-      const results = await response.json()
-      onProcessingComplete(results)
+      // const results = await response.json()
+      // onProcessingComplete(results)
     } catch (err) {
       setError('Failed to generate images. Please try again.')
       setIsUploading(false)
+      console.log (err)
     }
   }
 
