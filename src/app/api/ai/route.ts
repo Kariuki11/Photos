@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
     `;
 
     const aiResult = await generateNewImage(basePrompt, {
-      model: "imagen-3.0-generate-002",
+      model: "gemini-2.5-flash",
+      //model: "imagen-3.0-generate-002",
       aspectRatio: "1:1",
     });
 

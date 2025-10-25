@@ -16,6 +16,7 @@ interface UploadFormProps {
 export function UploadForm({ onProcessingStart, onProcessingComplete }: UploadFormProps) {
   const [modelPhoto, setModelPhoto] = useState<File | null>(null)
   const [clothingPhoto, setClothingPhoto] = useState<File | null>(null)
+  const [step, setStep] = useState<number>(0)
   const [modelPreview, setModelPreview] = useState<string | null>(null)
   const [clothingPreview, setClothingPreview] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -63,6 +64,22 @@ export function UploadForm({ onProcessingStart, onProcessingComplete }: UploadFo
       formData.append('modelPhoto', modelPhoto)
       formData.append('clothingPhoto', clothingPhoto)
 
+      for (let index = 0; index < 4; index++) {
+        formData.append('step', index.toString())
+        const response = await fetch('/api/ai', {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) {
+          throw new Error('Failed to process images')
+        }
+  
+        const results = await response.json()
+        onProcessingComplete({...results})
+      }
+
+      
+      }
       // Call API
       const response = await fetch('/api/ai', {
         method: 'POST',

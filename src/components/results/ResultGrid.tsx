@@ -18,9 +18,14 @@ const imageLabels = {
   model_front: 'Model Wearing (Front)',
   product_back: 'Product Back View',
   model_back: 'Model Wearing (Back View)',
+
 }
 
+
 export function ResultGrid({ images }: ResultGridProps) {
+  function AddImage(image, step){
+    if step
+  }
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
