@@ -65,6 +65,8 @@ export async function generateNewImage(
   // Prepare Freepik Mystic API request
   const url = 'https://api.freepik.com/v1/ai/mystic';
   const apiKey = process.env.FREEPIK_API_KEY;
+
+
   // Use structure_reference and style_reference if provided
   const body: any = {
     prompt,

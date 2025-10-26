@@ -88,6 +88,8 @@ export async function POST(request: NextRequest) {
 
     const aiResult = await generateNewImage(getbasePrompt(currentStep), currentStep,{
       model: "gemini-2.5-flash",
+      //model: "realism",
+
       //model: "imagen-3.0-generate-002",
       //aspectRatio: "1:1",
     });
