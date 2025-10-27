@@ -2,16 +2,9 @@
 
 A modern Next.js application that enables users to upload photos of models and clothing items, then uses AI to generate enhanced product photos and virtual try-on images.
 
-## 🚀 Tech Stack
 
-- **Framework**: Next.js 15+ (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **UI Components**: Shadcn/ui
-- **Animations**: Framer Motion
-- **Icons**: Lucide React
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
@@ -61,21 +54,6 @@ src/
     └── image.ts                  # Image processing utilities
 ```
 
-## 🎯 Core Features
-
-### Frontend
-- **Upload Interface**: Drag-and-drop file uploads for model and clothing photos
-- **Image Preview**: Real-time preview of uploaded images
-- **Loading States**: Smooth loading indicators during AI processing
-- **Results Display**: Grid layout showing 4 AI-generated images
-- **Responsive Design**: Mobile-first responsive layout
-
-### Backend
-- **API Routes**: Next.js API routes for handling uploads and AI processing
-- **File Validation**: Image format and size validation
-- **AI Integration**: Support for multiple AI services (Replicate, OpenAI, Hugging Face)
-- **Error Handling**: Comprehensive error handling and user feedback
-
 ## 🔧 Setup Instructions
 
 1. **Install Dependencies**
@@ -84,14 +62,6 @@ src/
    ```
 
 2. **Environment Variables**
-   Create a `.env.local` file with:
-   ```env
-   REPLICATE_API_TOKEN=your_replicate_token
-   OPENAI_API_KEY=your_openai_key
-   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloudinary_name
-   CLOUDINARY_API_KEY=your_cloudinary_key
-   CLOUDINARY_API_SECRET=your_cloudinary_secret
-   ```
 
 3. **Run Development Server**
    ```bash
@@ -104,42 +74,9 @@ src/
    npm start
    ```
 
-## 🎨 AI-Generated Outputs
+##
 
-The application generates four types of images:
-
-1. **Enhanced Product Photo**: Clean background, no wrinkles
-2. **Model Wearing Front**: Model wearing the clothing item (front view)
-3. **Product Back View**: Back view of the clothing item
-4. **Model Wearing Back**: Model wearing the clothing item (back view)
-
-## 🚀 Deployment
-
-The application is designed to be deployed on Vercel with the following considerations:
-
-- Frontend and API routes deploy together
-- Environment variables configured in Vercel dashboard
-- AI service APIs handle the heavy processing
-- Static assets served via CDN
-
-## 📝 Development Notes
-
-- Uses Next.js App Router for modern routing
-- TypeScript for type safety
-- Tailwind CSS for styling
-- Shadcn/ui for consistent UI components
-- Framer Motion for smooth animations
-- Comprehensive error handling and loading states
-
-## 🔐 Security
-
-- Input validation for file types and sizes
-- API tokens stored in environment variables
-- HTTPS enforced in production
-- File size limits (max 10MB per image)
-- Secure file upload handling
-
-## 🧪 Testing
+##Testing
 
 - Unit tests for utility functions
 - Integration tests for API routes
