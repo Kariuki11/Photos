@@ -10,13 +10,12 @@ import { createImagePreview } from '@/utils/image'
 
 interface UploadFormProps {
   onProcessingStart: () => void
-  onProcessingComplete: (image: string, step: number) => void
+  onProcessingComplete: (images: Record<string, string>) => void
 }
 
 export function UploadForm({ onProcessingStart, onProcessingComplete }: UploadFormProps) {
   const [modelPhoto, setModelPhoto] = useState<File | null>(null)
   const [clothingPhoto, setClothingPhoto] = useState<File | null>(null)
-  // const [step, setStep] = useState<number>(0)
   const [modelPreview, setModelPreview] = useState<string | null>(null)
   const [clothingPreview, setClothingPreview] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -49,56 +48,50 @@ export function UploadForm({ onProcessingStart, onProcessingComplete }: UploadFo
     }
   }, [])
 
+
   const handleGenerate = async () => {
     if (!modelPhoto || !clothingPhoto) {
-      setError('Please upload both model and clothing photos')
-      return
+      setError('Please upload both model and clothing photos');
+      return;
     }
 
-    setIsUploading(true)
-    setError(null)
-    onProcessingStart()
+    setIsUploading(true);
+    setError(null);
+    onProcessingStart();
+
+    const imageKeys = [
+      'enhanced_product',
+      'model_front',
+      'product_back',
+      'model_back',
+    ];
 
     try {
-      // Create FormData
-      const formData = new FormData()
-      formData.append('modelPhoto', modelPhoto)
-      formData.append('clothingPhoto', clothingPhoto)
+      const images: Record<string, string> = {};
+      for (let index = 1; index <= 4; index++) {
+        const formData = new FormData();
+        formData.append('modelPhoto', modelPhoto);
+        formData.append('clothingPhoto', clothingPhoto);
+        formData.append('step', index.toString());
 
-      for (let index = 0; index < 4; index++) {
-        formData.append('step', index.toString())
         const response = await fetch('/api/ai', {
           method: 'POST',
           body: formData,
-        })
+        });
         if (!response.ok) {
-          throw new Error('Failed to process images')
+          throw new Error('Failed to process images');
         }
-  
-        const results = await response.json()
-        onProcessingComplete(results.data.image, index++)
+        const results = await response.json();
+        // Support both { image } and { data: { image } }
+        images[imageKeys[index - 1]] = results.image || results.data?.image || '';
       }
-
-      
-      // }
-      // Call API
-      // const response = await fetch('/api/ai', {
-      //   method: 'POST',
-      //   body: formData,
-      // })
-
-      // if (!response.ok) {
-      //   throw new Error('Failed to process images')
-      // }
-
-      // const results = await response.json()
-      // onProcessingComplete(results)
+      onProcessingComplete(images);
     } catch (err) {
-      setError('Failed to generate images. Please try again.')
-      setIsUploading(false)
-      console.log (err)
+      setError('Failed to generate images. Please try again.');
+      setIsUploading(false);
+      console.log(err);
     }
-  }
+  };
 
   const canGenerate = modelPhoto && clothingPhoto && !isUploading
 

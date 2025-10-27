@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-
 /**
  * The standardized result type our app will return
  */
@@ -17,13 +16,13 @@ export type GeneratedImageResult = {
 /**
  * generateNewImage()
  * -----------------
- * Generates 4 distinct images using Gemini 2.5 Flash:
- *  1️⃣ Enhanced product photo
- *  2️⃣ Model wearing the clothing (front view)
- *  3️⃣ Product back view
- *  4️⃣ Model wearing the clothing (back view)
+ * Generates a single image variant (based on step) using Freepik Mystic API.
+ * Steps:
+ *  1 => Enhanced product
+ *  2 => Model front
+ *  3 => Product back
+ *  4 => Model back
  */
-
 export async function generateNewImage(
   basePrompt: string,
   step: number,
@@ -45,27 +44,25 @@ export async function generateNewImage(
     model_back: `${basePrompt}\nGenerate a realistic back-view photo of the human model wearing the clothing item.`,
   };
 
-  const getPrompt = (step: number) => {
-    if(step == 1){
-      return(prompts.enhanced_product)
-    }
-    else if(step == 2){
-      return(prompts.model_front)
-    }
-    else if(step == 3){
-      return(prompts.product_back)
-    }
-    else if(step == 4){
-      return(prompts.model_back)
-    }
-    else{return(prompts.enhanced_product)}
-  }
-  const prompt = getPrompt(step)
+  const getPrompt = (stepNum: number) => {
+    if (stepNum === 1) return prompts.enhanced_product;
+    if (stepNum === 2) return prompts.model_front;
+    if (stepNum === 3) return prompts.product_back;
+    if (stepNum === 4) return prompts.model_back;
+    return prompts.enhanced_product;
+  };
+
+  const prompt = getPrompt(step);
 
   // Prepare Freepik Mystic API request
   const url = 'https://api.freepik.com/v1/ai/mystic';
-  const apiKey = process.env.FREEPIK_API_KEY;
-  // Use structure_reference and style_reference if provided
+  const apiKey = process.env.FREEPIK_API_KEY || '';
+
+  // Avoid sending an empty API key in production; throw so caller knows
+  if (!apiKey) {
+    throw new Error('FREEPIK_API_KEY environment variable is required.');
+  }
+
   const body: any = {
     prompt,
     resolution: '2k',
@@ -74,6 +71,7 @@ export async function generateNewImage(
     filter_nsfw: true,
     creative_detailing: 33,
   };
+
   if (options?.structure_reference) {
     body.structure_reference = options.structure_reference;
     body.structure_strength = 50;
@@ -86,74 +84,67 @@ export async function generateNewImage(
 
   let image: string | null = null;
   let raw: any = null;
+  let taskId: string | null = null;
+  let generated: string[] = [];
+
   try {
-    // const response = await fetch(url, {
-    //   method: 'POST',
-    //   headers: {
-    //     'x-freepik-api-key': apiKey,
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify(body),
-    // });
-    // const data = await response.json();
-
-
-    // Step 1: Create the generation task
-const createResponse = await fetch(url, {
-  method: 'POST',
-  headers: {
-    'x-freepik-api-key': apiKey,
-    'Content-Type': 'application/json'
-  },
-    body: JSON.stringify(body),  
-});
-
-const data  = await createResponse.json();
-console.log("Freepik Mystic API response:", data);
-const taskId = data.data.task_id;
-
-console.log("Created Freepik task:", taskId);
-
-// Step 2: Poll until it's completed
-let generatedImages = [];
-for (let i = 0; i < 10; i++) { // retry up to 10 times
-  const statusResponse = await fetch(`https://api.freepik.com/v1/mystic/task/${taskId}`, {
-    headers: {
-      'x-freepik-api-key': apiKey,
+    // Step 1: Submit the generation request
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'x-freepik-api-key': apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await response.json();
+    raw = data;
+    // Log the initial response for debugging
+    console.log('Freepik Mystic API response:', JSON.stringify(data, null, 2));
+    if (data?.data?.task_id) {
+      taskId = data.data.task_id;
+      generated = data.data.generated || [];
     }
-  });
 
-  const statusData = await statusResponse.json();
-  console.log("Current statusData:", statusData);
-  console.log("Freepik task status:", statusData.data.status);
-
-  if (statusData.data.status === 'COMPLETED') {
-    generatedImages = statusData.data.generated;
-    break;
-  }
-
-  // Wait 2 seconds before retrying
-  await new Promise(res => setTimeout(res, 2000));
-}
-
-if (generatedImages.length > 0) {
-  console.log("✅ Generated images:", generatedImages);
-      image = generatedImages[0];
-
-} else {
-  console.warn("⚠ No images generated after polling.");
-}
-
-
-
-    // raw = data;
-
-    // console.log('Freepik Mystic API response:', data);
-    // // The Freepik API returns URLs in data.generated (array)
-    // if (data?.data?.generated && Array.isArray(data.data.generated) && data.data.generated.length > 0) {
-    //   image = data.data.generated[0];
-    //   console.log('Generated image URL:', image);
-    // }
+    // Step 2: If generated is empty, poll the status endpoint
+    if (taskId && (!generated || generated.length === 0)) {
+      console.log('Created Freepik task:', taskId);
+      const statusUrl = `https://api.freepik.com/v1/ai/mystic/${taskId}`;
+      const maxAttempts = 20; // up to ~20s
+      const intervalMs = 6000; // 1s between polls
+      let attempt = 0;
+      let statusData: any = null;
+      while (attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+        const pollRes = await fetch(statusUrl, {
+          method: 'GET',
+          headers: {
+            'x-freepik-api-key': apiKey,
+            'Content-Type': 'application/json',
+          },
+        });
+        statusData = await pollRes.json();
+        console.log('Current statusData:', statusData);
+        const pollStatus = statusData?.data?.status;
+        if (
+          (pollStatus === 'SUCCEEDED' || pollStatus === 'COMPLETED') &&
+          Array.isArray(statusData.data.generated) &&
+          statusData.data.generated.length > 0
+        ) {
+          image = statusData.data.generated[0];
+          raw = statusData;
+          break;
+        } else if (pollStatus === 'FAILED') {
+          throw new Error('Freepik Mystic API task failed.');
+        }
+        attempt++;
+      }
+      if (!image) {
+        throw new Error('Timed out waiting for Freepik Mystic API image generation.');
+      }
+    } else if (generated && generated.length > 0) {
+      image = generated[0];
+    }
   } catch (error) {
     throw new Error('Failed to generate image with Freepik Mystic API: ' + (error as any)?.message);
   }
@@ -168,208 +159,3 @@ if (generatedImages.length > 0) {
     },
   };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// /* eslint-disable @typescript-eslint/no-explicit-any */
-// import { ai } from "./genkit.config";
-// import { googleAI } from "@genkit-ai/google-genai";
-
-// export type GeneratedImageResult = {
-//   prompt: string;
-//   images: {
-//     enhanced_product?: string | null;
-//     model_front?: string | null;
-//     product_back?: string | null;
-//     model_back?: string | null;
-//   };
-//   metadata?: {
-//     model?: string;
-//     createdAt?: string;
-//     raw?: any;
-//   };
-// };
-
-// /**
-//  * generateNewImage
-//  * Generates four distinct images using Gemini/Imagen via Genkit:
-//  * 1️⃣ Enhanced product photo
-//  * 2️⃣ Model wearing product (front view)
-//  * 3️⃣ Product back view
-//  * 4️⃣ Model wearing product (back view)
-//  */
-// export async function generateNewImage(
-//   basePrompt: string,
-//   options?: {
-//     model?: string;
-//     aspectRatio?: "1:1" | "16:9" | "9:16";
-//   }
-// ): Promise<GeneratedImageResult> {
-//   if (!basePrompt?.trim()) {
-//     throw new Error("Prompt is required for image generation.");
-//   }
-
-//   const modelName = options?.model ?? "imagen-3.0-generate-002";
-//   const aspectRatio = options?.aspectRatio ?? "1:1";
-
-//   // Define the four generation prompts
-//   const prompts = {
-//     enhanced_product: `${basePrompt}\nGenerate a clean, high-quality studio photo of the clothing item only. White background, wrinkle-free, soft lighting.`,
-//     model_front: `${basePrompt}\nGenerate a front-view image of the model wearing the clothing item, realistic proportions, clean background.`,
-//     product_back: `${basePrompt}\nGenerate a clear back-view image of the clothing item alone.`,
-//     model_back: `${basePrompt}\nGenerate a back-view image of the model wearing the clothing item.`,
-//   };
-
-//   // Run all image generations in parallel
-//   const [enhanced, front, backItem, backModel] = await Promise.all([
-//     ai.generate({
-//       model: googleAI.model(modelName),
-//       prompt: prompts.enhanced_product,
-//       config: { aspectRatio },
-//     }),
-//     ai.generate({
-//       model: googleAI.model(modelName),
-//       prompt: prompts.model_front,
-//       config: { aspectRatio },
-//     }),
-//     ai.generate({
-//       model: googleAI.model(modelName),
-//       prompt: prompts.product_back,
-//       config: { aspectRatio },
-//     }),
-//     ai.generate({
-//       model: googleAI.model(modelName),
-//       prompt: prompts.model_back,
-//       config: { aspectRatio },
-//     }),
-//   ]);
-
-//   const extractUrl = (res: any) =>
-//     res?.media?.() ? res.media().url ?? null : res?.media?.url ?? null;
-
-//   const images = {
-//     enhanced_product: extractUrl(enhanced),
-//     model_front: extractUrl(front),
-//     product_back: extractUrl(backItem),
-//     model_back: extractUrl(backModel),
-//   };
-
-//   return {
-//     prompt: basePrompt,
-//     images,
-//     metadata: {
-//       model: modelName,
-//       createdAt: new Date().toISOString(),
-//       raw: { enhanced, front, backItem, backModel },
-//     },
-//   };
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// // // lib/generateNewImage.ts
-// // /* eslint-disable @typescript-eslint/no-explicit-any */
-// // import { ai } from './genkit.config';
-// // import { googleAI } from '@genkit-ai/google-genai';
-
-// // export type GeneratedImageResult = {
-// //   prompt: string;
-// //   imageUrl: string | null;
-// //   metadata?: {
-// //     model?: string;
-// //     createdAt?: string;
-// //     raw?: any;
-// //   };
-// // };
-
-// // export async function generateNewImage(
-// //   prompt: string,
-// //   options?: {
-// //     model?: string;
-// //     aspectRatio?: '1:1' | '16:9' | '9:16';
-// //   }
-// // ): Promise<GeneratedImageResult> {
-// //   if (!prompt?.trim()) {
-// //     throw new Error('Prompt is required for image generation.');
-// //   }
-
-// //   const modelName = options?.model ?? 'imagen-3.0-generate-002';
-
-// //   try {
-// //     // Perform the image generation request
-// //     const response = await ai.generate({
-// //       model: googleAI.model(modelName),
-// //       prompt: `${prompt}`,
-// //       config: {
-// //         // You can include more config options like negativePrompt, enhancePrompt, etc.
-// //         aspectRatio: options?.aspectRatio ?? '1:1',
-// //       },
-// //     });
-
-// //     // According to docs, `response.media()` gives the generated image
-// //     const imageUrl = response.media?.url ?? null;
-
-// //     return {
-// //       prompt,
-// //       imageUrl,
-// //       metadata: {
-// //         model: modelName,
-// //         createdAt: new Date().toISOString(),
-// //         raw: response,
-// //       },
-// //     };
-// //   } catch (error: any) {
-// //     console.error('[generateNewImage] Generation failed:', error);
-// //     throw new Error(`Failed to generate image: ${error.message}`);
-// //   }
-// // }

@@ -23,22 +23,10 @@ export default function Home() {
     setResults(null)
   }
 
-  function AddImage(image: string, step: number){
-    let result = {...results}
-    if (step == 1) {
-      result = {...result, enhanced_product: image}
-    }
-    else if (step == 2) {
-      result = {...result, model_front: image}
-    }
-    else if (step == 3) {
-      result = {...result, product_back: image}
-    }
-    else if (step == 4) {
-      result = {...result, model_back: image}
-    }
-    setIsProcessing(false)
-    setResults(result)
+
+  function handleProcessingComplete(images: ImageResults) {
+    setIsProcessing(false);
+    setResults(images);
   }
 
   
@@ -65,7 +53,7 @@ export default function Home() {
           <div className="space-y-8">
             <UploadForm 
               onProcessingStart={handleProcessingStart}
-              onProcessingComplete={AddImage}
+              onProcessingComplete={handleProcessingComplete}
             />
           </div>
         ) : (
